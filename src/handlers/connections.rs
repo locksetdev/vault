@@ -1,10 +1,8 @@
-use crate::models::{JsonPayload, UpdateVaultConnectionResponse};
-use crate::{
-    errors::AppError,
-    models::{CreateVaultConnectionRequest, UpdateVaultConnectionRequest, VaultConnectionResponse},
-    services::connections::ConnectionService,
-    state::AppState,
+use crate::models::{
+    CreateVaultConnectionRequest, CreateVaultConnectionResponse, JsonPayload,
+    UpdateVaultConnectionRequest, UpdateVaultConnectionResponse, VaultConnectionResponse,
 };
+use crate::{errors::AppError, services::connections::ConnectionService, state::AppState};
 use axum::{
     Json,
     extract::{Path, State},
@@ -19,7 +17,7 @@ impl ConnectionHandler {
     pub async fn create_vault_connection(
         State(state): State<Arc<AppState>>,
         JsonPayload(payload): JsonPayload<CreateVaultConnectionRequest>,
-    ) -> Result<(StatusCode, Json<VaultConnectionResponse>), AppError> {
+    ) -> Result<(StatusCode, Json<CreateVaultConnectionResponse>), AppError> {
         let response = ConnectionService::create_vault_connection(&state, payload).await?;
         Ok((StatusCode::CREATED, Json(response)))
     }

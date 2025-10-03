@@ -1,7 +1,10 @@
 use crate::{
     crypto,
     errors::AppError,
-    models::{CreateSecretRequest, CreateSecretVersionRequest, SecretResponse},
+    models::{
+        CreateSecretRequest, CreateSecretResponse, CreateSecretVersionRequest,
+        CreateSecretVersionResponse, SecretResponse,
+    },
     repositories::{connections::ConnectionRepository, secrets::SecretRepository},
     state::AppState,
 };
@@ -17,7 +20,7 @@ impl SecretService {
     pub async fn create_secret_with_version(
         state: &Arc<AppState>,
         request: CreateSecretRequest,
-    ) -> Result<(), AppError> {
+    ) -> Result<CreateSecretResponse, AppError> {
         let mut tx = state.db.begin().await?;
 
         // Resolve vault connection ID if provided
@@ -45,7 +48,7 @@ impl SecretService {
             crypto::encrypt(&mut tx, &state.kms_client, request.value.as_bytes()).await?;
 
         // Create the first version
-        SecretRepository::create_secret_version(
+        let new_version = SecretRepository::create_secret_version(
             &mut tx,
             secret.id,
             &request.version_tag,
@@ -65,7 +68,11 @@ impl SecretService {
         .await?;
 
         tx.commit().await?;
-        Ok(())
+        Ok(CreateSecretResponse {
+            name: secret.name,
+            version_tag: new_version.version_tag,
+            created_at: new_version.created_at,
+        })
     }
 
     /// Get the current version of a secret by name
@@ -117,7 +124,7 @@ impl SecretService {
         state: &Arc<AppState>,
         name: &str,
         request: CreateSecretVersionRequest,
-    ) -> Result<(), AppError> {
+    ) -> Result<CreateSecretVersionResponse, AppError> {
         let mut tx = state.db.begin().await?;
 
         let mut secret = SecretRepository::get_secret_by_name_for_update(&mut tx, name)
@@ -134,7 +141,7 @@ impl SecretService {
             crypto::encrypt(&mut tx, &state.kms_client, request.value.as_bytes()).await?;
 
         // Insert the new version
-        SecretRepository::create_secret_version(
+        let new_version = SecretRepository::create_secret_version(
             &mut tx,
             secret.id,
             &request.version_tag,
@@ -155,7 +162,11 @@ impl SecretService {
         .await?;
 
         tx.commit().await?;
-        Ok(())
+        Ok(CreateSecretVersionResponse {
+            name: secret.name,
+            version_tag: new_version.version_tag,
+            created_at: new_version.created_at,
+        })
     }
 
     /// Get a specific version of a secret

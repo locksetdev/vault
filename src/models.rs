@@ -54,12 +54,36 @@ pub struct SecretResponse {
     pub version_tag: String,
 }
 
+#[derive(Serialize, Debug)]
+pub struct CreateSecretResponse {
+    pub name: String,
+    pub version_tag: String,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Serialize, Debug)]
+pub struct CreateSecretVersionResponse {
+    pub name: String,
+    pub version_tag: String,
+    pub created_at: DateTime<Utc>,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CreateVaultConnectionRequest {
     pub public_id: String,
     pub integration_type: String,
     pub config: String,
     pub ttl: Option<i32>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CreateVaultConnectionResponse {
+    pub public_id: String,
+    pub integration_type: String,
+    pub sha256sum: String,
+    pub ttl: Option<i32>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

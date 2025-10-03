@@ -1,8 +1,10 @@
-use crate::models::UpdateVaultConnectionResponse;
 use crate::{
     crypto,
     errors::AppError,
-    models::{CreateVaultConnectionRequest, UpdateVaultConnectionRequest, VaultConnectionResponse},
+    models::{
+        CreateVaultConnectionRequest, CreateVaultConnectionResponse, UpdateVaultConnectionRequest,
+        UpdateVaultConnectionResponse, VaultConnectionResponse,
+    },
     repositories::connections::ConnectionRepository,
     state::AppState,
 };
@@ -17,7 +19,7 @@ impl ConnectionService {
     pub async fn create_vault_connection(
         state: &Arc<AppState>,
         payload: CreateVaultConnectionRequest,
-    ) -> Result<VaultConnectionResponse, AppError> {
+    ) -> Result<CreateVaultConnectionResponse, AppError> {
         let mut tx = state.db.begin().await?;
 
         // Encrypt the configuration
@@ -36,11 +38,10 @@ impl ConnectionService {
 
         tx.commit().await?;
 
-        let response = VaultConnectionResponse {
+        let response = CreateVaultConnectionResponse {
             public_id: new_connection.public_id,
             integration_type: new_connection.integration_type,
             sha256sum: new_connection.sha256sum,
-            config: payload.config, // Return the original config
             ttl: new_connection.ttl,
             created_at: new_connection.created_at,
             updated_at: new_connection.updated_at,

@@ -9,25 +9,23 @@ mod routes;
 mod services;
 mod state;
 
-use std::error::Error;
 use crate::config::AppConfig;
 use crate::routes::configure_routes;
 use crate::state::AppState;
-use axum::{
-    Router, middleware as axum_middleware,
-};
+use axum::{Router, middleware as axum_middleware};
 use p256::ecdsa::VerifyingKey;
 use sqlx::postgres::PgPoolOptions;
+use sqlx::{Pool, Postgres};
+use std::error::Error;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use sqlx::{Pool, Postgres};
 use tracing::info;
 use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     AppConfig::load().expect("Failed to load application configuration");
-    
+
     setup_logging()?;
     let config = AppConfig::instance();
     let db_pool = create_db_pool(&config).await?;
@@ -83,6 +81,6 @@ fn setup_logging() -> Result<(), Box<dyn std::error::Error>> {
         .json()
         .finish();
     tracing::subscriber::set_global_default(subscriber)?;
-    
+
     Ok(())
 }

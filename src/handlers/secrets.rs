@@ -1,6 +1,9 @@
 use crate::{
     errors::AppError,
-    models::{CreateSecretRequest, CreateSecretVersionRequest, JsonPayload, SecretResponse},
+    models::{
+        CreateSecretRequest, CreateSecretResponse, CreateSecretVersionRequest,
+        CreateSecretVersionResponse, JsonPayload, SecretResponse,
+    },
     services::secrets::SecretService,
     state::AppState,
 };
@@ -18,9 +21,9 @@ impl SecretHandler {
     pub async fn create_secret(
         State(state): State<Arc<AppState>>,
         JsonPayload(payload): JsonPayload<CreateSecretRequest>,
-    ) -> Result<StatusCode, AppError> {
-        SecretService::create_secret_with_version(&state, payload).await?;
-        Ok(StatusCode::CREATED)
+    ) -> Result<(StatusCode, Json<CreateSecretResponse>), AppError> {
+        let response = SecretService::create_secret_with_version(&state, payload).await?;
+        Ok((StatusCode::CREATED, Json(response)))
     }
 
     /// Get the current version of a secret by name
@@ -38,9 +41,9 @@ impl SecretHandler {
         State(state): State<Arc<AppState>>,
         Path(name): Path<String>,
         JsonPayload(payload): JsonPayload<CreateSecretVersionRequest>,
-    ) -> Result<StatusCode, AppError> {
-        SecretService::create_secret_version(&state, &name, payload).await?;
-        Ok(StatusCode::CREATED)
+    ) -> Result<(StatusCode, Json<CreateSecretVersionResponse>), AppError> {
+        let response = SecretService::create_secret_version(&state, &name, payload).await?;
+        Ok((StatusCode::CREATED, Json(response)))
     }
 
     /// Get a specific version of a secret

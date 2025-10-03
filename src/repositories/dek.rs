@@ -5,17 +5,6 @@ use sqlx::{PgPool, Postgres, Transaction};
 pub struct DekRepository;
 
 impl DekRepository {
-    pub async fn get_random_dek(
-        tx: &mut Transaction<'_, Postgres>,
-    ) -> Result<DataEncryptionKey, AppError> {
-        let dek: DataEncryptionKey =
-            sqlx::query_as("SELECT * FROM data_encryption_keys ORDER BY RANDOM() LIMIT 1")
-                .fetch_one(&mut **tx)
-                .await?;
-
-        Ok(dek)
-    }
-
     pub async fn create_dek(
         tx: &mut Transaction<'_, Postgres>,
         kek_id: i32,

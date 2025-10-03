@@ -77,17 +77,6 @@ impl ConnectionRepository {
         Ok(updated_connection)
     }
 
-    pub async fn get_vault_connection_by_id(
-        tx: &mut Transaction<'_, Postgres>,
-        id: i32,
-    ) -> Result<Option<VaultConnection>, AppError> {
-        let connection = sqlx::query_as("SELECT * FROM vault_connections WHERE id = $1")
-            .bind(id)
-            .fetch_optional(&mut **tx)
-            .await?;
-        Ok(connection)
-    }
-
     pub async fn delete_vault_connection(
         db: &sqlx::PgPool,
         public_id: &str,

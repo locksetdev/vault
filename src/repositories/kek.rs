@@ -8,9 +8,10 @@ impl KekRepository {
     pub async fn get_random_kek(
         tx: &mut Transaction<'_, Postgres>,
     ) -> Result<KeyEncryptionKey, AppError> {
-        let kek: KeyEncryptionKey = sqlx::query_as("SELECT * FROM key_encryption_keys ORDER BY RANDOM()")
-            .fetch_one(&mut **tx)
-            .await?;
+        let kek: KeyEncryptionKey =
+            sqlx::query_as("SELECT * FROM key_encryption_keys ORDER BY RANDOM()")
+                .fetch_one(&mut **tx)
+                .await?;
 
         Ok(kek)
     }
