@@ -43,6 +43,40 @@ impl ConnectionRepository {
         Ok(connection)
     }
 
+    pub async fn update_vault_connection(
+        tx: &mut Transaction<'_, Postgres>,
+        public_id: &str,
+        encrypted_config: Option<&str>,
+        sha256sum: Option<&str>,
+        dek_id: Option<i32>,
+        ttl: Option<i32>,
+        integration_type: Option<&str>,
+    ) -> Result<VaultConnection, AppError> {
+        let updated_connection = sqlx::query_as(
+            r#"
+            UPDATE vault_connections
+            SET
+                encrypted_config = COALESCE($1, encrypted_config),
+                sha256sum = COALESCE($2, sha256sum),
+                dek_id = COALESCE($3, dek_id),
+                ttl = $4,
+                integration_type = COALESCE($5, integration_type)
+            WHERE public_id = $6
+            RETURNING *
+            "#,
+        )
+        .bind(encrypted_config)
+        .bind(sha256sum)
+        .bind(dek_id)
+        .bind(ttl)
+        .bind(integration_type)
+        .bind(public_id)
+        .fetch_one(&mut **tx)
+        .await?;
+
+        Ok(updated_connection)
+    }
+
     pub async fn get_vault_connection_by_id(
         tx: &mut Transaction<'_, Postgres>,
         id: i32,

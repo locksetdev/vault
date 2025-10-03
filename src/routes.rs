@@ -26,6 +26,7 @@ pub fn configure_routes(router: Router<Arc<AppState>>) -> Router<Arc<AppState>> 
         .route(
             "/v1/vault-connections/{public_id}",
             get(ConnectionHandler::get_vault_connection)
+                .patch(ConnectionHandler::update_vault_connection)
                 .delete(ConnectionHandler::delete_vault_connection),
         )
 }

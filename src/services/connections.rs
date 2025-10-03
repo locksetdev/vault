@@ -1,7 +1,8 @@
+use crate::models::UpdateVaultConnectionResponse;
 use crate::{
     crypto,
     errors::AppError,
-    models::{CreateVaultConnectionRequest, VaultConnectionResponse},
+    models::{CreateVaultConnectionRequest, UpdateVaultConnectionRequest, VaultConnectionResponse},
     repositories::connections::ConnectionRepository,
     state::AppState,
 };
@@ -20,8 +21,7 @@ impl ConnectionService {
         let mut tx = state.db.begin().await?;
 
         // Encrypt the configuration
-        let config_bytes = serde_json::to_vec(&payload.config)
-            .map_err(|e| AppError::InvalidInput(format!("Failed to serialize config: {}", e)))?;
+        let config_bytes = payload.config.as_bytes();
         let encrypted_payload = crypto::encrypt(&mut tx, &state.kms_client, &config_bytes).await?;
 
         // Insert into database
@@ -44,6 +44,52 @@ impl ConnectionService {
             ttl: new_connection.ttl,
             created_at: new_connection.created_at,
             updated_at: new_connection.updated_at,
+        };
+
+        Ok(response)
+    }
+
+    /// Update a vault connection
+    pub async fn update_vault_connection(
+        state: &Arc<AppState>,
+        public_id: &str,
+        payload: UpdateVaultConnectionRequest,
+    ) -> Result<UpdateVaultConnectionResponse, AppError> {
+        let mut tx = state.db.begin().await?;
+
+        let mut encrypted_config = None;
+        let mut sha256sum = None;
+        let mut dek_id = None;
+
+        if let Some(config) = payload.config {
+            let config_bytes = config.as_bytes();
+            let encrypted_payload =
+                crypto::encrypt(&mut tx, &state.kms_client, &config_bytes).await?;
+            encrypted_config = Some(encrypted_payload.encrypted_blob);
+            sha256sum = Some(encrypted_payload.sha256sum);
+            dek_id = Some(encrypted_payload.dek_id);
+        }
+
+        let updated_connection = ConnectionRepository::update_vault_connection(
+            &mut tx,
+            public_id,
+            encrypted_config.as_deref(),
+            sha256sum.as_deref(),
+            dek_id,
+            payload.ttl,
+            payload.integration_type.as_deref(),
+        )
+        .await?;
+
+        tx.commit().await?;
+
+        let response = UpdateVaultConnectionResponse {
+            public_id: updated_connection.public_id,
+            integration_type: updated_connection.integration_type,
+            sha256sum: updated_connection.sha256sum,
+            ttl: updated_connection.ttl,
+            created_at: updated_connection.created_at,
+            updated_at: updated_connection.updated_at,
         };
 
         Ok(response)

@@ -1,6 +1,7 @@
+use crate::models::{JsonPayload, UpdateVaultConnectionResponse};
 use crate::{
     errors::AppError,
-    models::{CreateVaultConnectionRequest, VaultConnectionResponse},
+    models::{CreateVaultConnectionRequest, UpdateVaultConnectionRequest, VaultConnectionResponse},
     services::connections::ConnectionService,
     state::AppState,
 };
@@ -10,7 +11,6 @@ use axum::{
     http::StatusCode,
 };
 use std::sync::Arc;
-use crate::models::JsonPayload;
 
 pub struct ConnectionHandler;
 
@@ -22,6 +22,17 @@ impl ConnectionHandler {
     ) -> Result<(StatusCode, Json<VaultConnectionResponse>), AppError> {
         let response = ConnectionService::create_vault_connection(&state, payload).await?;
         Ok((StatusCode::CREATED, Json(response)))
+    }
+
+    /// Update a Vault Connection
+    pub async fn update_vault_connection(
+        State(state): State<Arc<AppState>>,
+        Path(public_id): Path<String>,
+        JsonPayload(payload): JsonPayload<UpdateVaultConnectionRequest>,
+    ) -> Result<Json<UpdateVaultConnectionResponse>, AppError> {
+        let response =
+            ConnectionService::update_vault_connection(&state, &public_id, payload).await?;
+        Ok(Json(response))
     }
 
     /// Get a Vault Connection by its public ID

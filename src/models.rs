@@ -62,6 +62,23 @@ pub struct CreateVaultConnectionRequest {
     pub ttl: Option<i32>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct UpdateVaultConnectionRequest {
+    pub config: Option<String>,
+    pub ttl: Option<i32>,
+    pub integration_type: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct UpdateVaultConnectionResponse {
+    pub public_id: String,
+    pub integration_type: String,
+    pub sha256sum: String,
+    pub ttl: Option<i32>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
 #[derive(Serialize, Debug)]
 pub struct VaultConnectionResponse {
     pub public_id: String,
