@@ -1,6 +1,6 @@
 use crate::errors::AppError;
 use crate::models::{Secret, SecretVersion};
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use sqlx::{Postgres, Transaction};
 
 pub struct SecretRepository;
@@ -104,6 +104,30 @@ impl SecretRepository {
         )
         .bind(current_version)
         .bind(previous_version)
+        .bind(Utc::now())
+        .bind(secret_id)
+        .execute(&mut **tx)
+        .await?;
+        Ok(())
+    }
+
+    pub async fn update_secret_proxied(
+        tx: &mut Transaction<'_, Postgres>,
+        secret_id: i32,
+        current_version: &str,
+        previous_version: Option<String>,
+        expire_at: DateTime<Utc>,
+    ) -> Result<(), AppError> {
+        sqlx::query(
+            r#"
+            UPDATE secrets
+            SET current_version = $1, previous_version = $2, expire_at = $3, updated_at = $4
+            WHERE id = $5
+            "#,
+        )
+        .bind(current_version)
+        .bind(previous_version)
+        .bind(expire_at)
         .bind(Utc::now())
         .bind(secret_id)
         .execute(&mut **tx)

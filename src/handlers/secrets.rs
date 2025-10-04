@@ -6,6 +6,7 @@ use crate::{
     },
     services::secrets::SecretService,
     state::AppState,
+    validators::{get_secret_name_regex, get_version_tag_regex},
 };
 use axum::{
     Json,
@@ -31,8 +32,12 @@ impl SecretHandler {
         State(state): State<Arc<AppState>>,
         Path(name): Path<String>,
     ) -> Result<Json<SecretResponse>, AppError> {
-        let response =
-            SecretService::get_secret_current_version(&state.db, &state.kms_client, &name).await?;
+        if !get_secret_name_regex().is_match(&name) {
+            return Err(AppError::InvalidInput(
+                "Invalid secret name format".to_string(),
+            ));
+        }
+        let response = SecretService::get_secret_current_version(&state, &name).await?;
         Ok(Json(response))
     }
 
@@ -42,6 +47,11 @@ impl SecretHandler {
         Path(name): Path<String>,
         JsonPayload(payload): JsonPayload<CreateSecretVersionRequest>,
     ) -> Result<(StatusCode, Json<CreateSecretVersionResponse>), AppError> {
+        if !get_secret_name_regex().is_match(&name) {
+            return Err(AppError::InvalidInput(
+                "Invalid secret name format".to_string(),
+            ));
+        }
         let response = SecretService::create_secret_version(&state, &name, payload).await?;
         Ok((StatusCode::CREATED, Json(response)))
     }
@@ -51,6 +61,16 @@ impl SecretHandler {
         State(state): State<Arc<AppState>>,
         Path((name, tag)): Path<(String, String)>,
     ) -> Result<Json<SecretResponse>, AppError> {
+        if !get_secret_name_regex().is_match(&name) {
+            return Err(AppError::InvalidInput(
+                "Invalid secret name format".to_string(),
+            ));
+        }
+        if !get_version_tag_regex().is_match(&tag) {
+            return Err(AppError::InvalidInput(
+                "Invalid version tag format".to_string(),
+            ));
+        }
         let response =
             SecretService::get_secret_version(&state.db, &state.kms_client, &name, &tag).await?;
         Ok(Json(response))
