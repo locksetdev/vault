@@ -1814,7 +1814,9 @@ dependencies = [
 
 [[package]]
 name = "lockset_vault_provider"
-version = "0.1.1-alpha.1"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5593720f3f76b895ecb5b353b04580311790b38ce67c05d604c97a8d28156bdc"
 dependencies = [
  "async-trait",
  "thiserror",
@@ -1823,7 +1825,9 @@ dependencies = [
 
 [[package]]
 name = "lockset_vault_provider_aws"
-version = "0.1.1-alpha.2"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d51edac5111399f6fa065395da1d76642106f7e74afec0a1d9925c86ca665d52"
 dependencies = [
  "async-trait",
  "aws-credential-types",
