@@ -1,7 +1,7 @@
 use crate::errors::AppError;
 use crate::models::{Secret, SecretVersion};
 use chrono::{DateTime, Utc};
-use sqlx::{Postgres, Transaction};
+use sqlx::{PgExecutor, Postgres, Transaction};
 
 pub struct SecretRepository;
 
@@ -10,16 +10,18 @@ impl SecretRepository {
         tx: &mut Transaction<'_, Postgres>,
         name: &str,
         vault_connection_id: Option<i32>,
+        version_tag: &str,
     ) -> Result<Secret, AppError> {
         let secret = sqlx::query_as(
             r#"
-            INSERT INTO secrets (name, vault_connection_id)
-            VALUES ($1, $2)
+            INSERT INTO secrets (name, vault_connection_id, current_version)
+            VALUES ($1, $2, $3)
             RETURNING *
             "#,
         )
         .bind(name)
         .bind(vault_connection_id)
+        .bind(version_tag)
         .fetch_one(&mut **tx)
         .await
         .map_err(|db_err| AppError::from(db_err))?;
@@ -74,17 +76,20 @@ impl SecretRepository {
         Ok(version)
     }
 
-    pub async fn get_secret_version_by_tag(
-        db: &sqlx::PgPool,
+    pub async fn get_secret_version_by_tag<'e, E>(
+        executor: E,
         secret_id: i32,
         tag: &str,
-    ) -> Result<Option<SecretVersion>, AppError> {
+    ) -> Result<Option<SecretVersion>, AppError>
+    where
+        E: PgExecutor<'e>,
+    {
         let version = sqlx::query_as(
             "SELECT * FROM secret_versions WHERE secret_id = $1 AND version_tag = $2",
         )
         .bind(secret_id)
         .bind(tag)
-        .fetch_optional(db)
+        .fetch_optional(executor)
         .await?;
         Ok(version)
     }
@@ -127,6 +132,46 @@ impl SecretRepository {
         )
         .bind(current_version)
         .bind(previous_version)
+        .bind(expire_at)
+        .bind(Utc::now())
+        .bind(secret_id)
+        .execute(&mut **tx)
+        .await?;
+        Ok(())
+    }
+
+    pub async fn update_secret_version_expiry(
+        tx: &mut Transaction<'_, Postgres>,
+        version_id: i32,
+        expire_at: DateTime<Utc>,
+    ) -> Result<(), AppError> {
+        sqlx::query(
+            r#"
+            UPDATE secret_versions
+            SET expire_at = $1, updated_at = $2
+            WHERE id = $3
+            "#,
+        )
+        .bind(expire_at)
+        .bind(Utc::now())
+        .bind(version_id)
+        .execute(&mut **tx)
+        .await?;
+        Ok(())
+    }
+
+    pub async fn update_secret_expiry(
+        tx: &mut Transaction<'_, Postgres>,
+        secret_id: i32,
+        expire_at: DateTime<Utc>,
+    ) -> Result<(), AppError> {
+        sqlx::query(
+            r#"
+            UPDATE secrets
+            SET expire_at = $1, updated_at = $2
+            WHERE id = $3
+            "#,
+        )
         .bind(expire_at)
         .bind(Utc::now())
         .bind(secret_id)

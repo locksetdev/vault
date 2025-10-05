@@ -1,7 +1,6 @@
 use crate::errors::AppError;
-use crate::validators::{
-    get_public_id_regex, get_secret_name_regex, get_version_tag_regex, validate_vault_config,
-};
+use crate::regex::{get_public_id_regex, get_secret_name_regex, get_version_tag_regex};
+use crate::validators::validate_vault_config;
 use axum::Json;
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{FromRequest, Request};
@@ -38,6 +37,7 @@ where
 }
 
 pub struct VaultConnectionConfig {
+    pub id: i32,
     pub integration_type: String,
     pub config: Zeroizing<String>,
     pub ttl: Option<i32>,
@@ -63,9 +63,9 @@ pub struct CreateSecretRequest {
         path = "get_public_id_regex()",
         message = "Invalid vault connection ID format"
     ))]
-    pub vault_connection_id: Option<String>,
+    pub vault_connection: Option<String>,
     #[validate(length(min = 1, message = "Secret value cannot be empty"))]
-    pub value: String,
+    pub value: Option<Zeroizing<String>>,
     #[validate(regex(
         path = "get_version_tag_regex()",
         message = "Invalid version tag format"
@@ -97,7 +97,7 @@ pub struct CreateSecretVersionRequest {
 #[derive(Serialize, Debug)]
 pub struct SecretResponse {
     pub name: String,
-    pub value: String,
+    pub value: Zeroizing<String>,
     pub version_tag: String,
 }
 
@@ -160,9 +160,11 @@ pub struct UpdateVaultConnectionResponse {
 
 #[derive(Serialize, Debug)]
 pub struct VaultConnectionResponse {
+    #[serde(skip_serializing)]
+    pub id: i32,
     pub public_id: String,
     pub integration_type: String,
-    pub config: String,
+    pub config: Zeroizing<String>,
     pub sha256sum: String,
     pub ttl: Option<i32>,
     pub created_at: DateTime<Utc>,

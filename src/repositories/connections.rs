@@ -82,8 +82,9 @@ impl ConnectionRepository {
         .bind(ttl)
         .bind(integration_type)
         .bind(public_id)
-        .fetch_one(&mut **tx)
-        .await?;
+        .fetch_optional(&mut **tx)
+        .await?
+        .ok_or_else(|| AppError::NotFoundError)?;
 
         Ok(updated_connection)
     }

@@ -3,8 +3,8 @@ use crate::models::{
     UpdateVaultConnectionRequest, UpdateVaultConnectionResponse, VaultConnectionResponse,
 };
 use crate::{
-    errors::AppError, services::connections::ConnectionService, state::AppState,
-    validators::get_public_id_regex,
+    errors::AppError, regex::get_public_id_regex, services::connections::ConnectionService,
+    state::AppState,
 };
 use axum::{
     Json,

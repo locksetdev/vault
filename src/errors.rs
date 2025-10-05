@@ -23,6 +23,9 @@ pub enum AppError {
     #[error("Item not found")]
     NotFoundError,
 
+    #[error("Item not found: {0}")]
+    NotFoundErrorWithMessage(String),
+
     #[error("A conflict occurred")]
     Conflict,
 
@@ -58,7 +61,9 @@ impl From<ProviderError> for AppError {
     fn from(err: ProviderError) -> Self {
         match err {
             ProviderError::InvalidConfiguration(msg) => AppError::InvalidInput(msg),
-            ProviderError::SecretNotFound(_) => AppError::NotFoundError,
+            ProviderError::SecretNotFound(message) => AppError::NotFoundErrorWithMessage(format!(
+                "Secret not found on Vault Connection: {message}"
+            )),
             ProviderError::ClientError(e) => {
                 AppError::KmsError(format!("Provider client error: {}", e))
             }
@@ -90,6 +95,9 @@ impl IntoResponse for AppError {
                 "The requested item was not found".to_string(),
                 None,
             ),
+            AppError::NotFoundErrorWithMessage(message) => {
+                (StatusCode::NOT_FOUND, message.to_string(), None)
+            }
             AppError::Conflict => (
                 StatusCode::CONFLICT,
                 "A conflict occurred. The resource may already exist.".to_string(),

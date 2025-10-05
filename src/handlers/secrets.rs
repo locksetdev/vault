@@ -4,9 +4,9 @@ use crate::{
         CreateSecretRequest, CreateSecretResponse, CreateSecretVersionRequest,
         CreateSecretVersionResponse, JsonPayload, SecretResponse,
     },
+    regex::{get_secret_name_regex, get_version_tag_regex},
     services::secrets::SecretService,
     state::AppState,
-    validators::{get_secret_name_regex, get_version_tag_regex},
 };
 use axum::{
     Json,
@@ -23,6 +23,17 @@ impl SecretHandler {
         State(state): State<Arc<AppState>>,
         JsonPayload(payload): JsonPayload<CreateSecretRequest>,
     ) -> Result<(StatusCode, Json<CreateSecretResponse>), AppError> {
+        if payload.vault_connection.is_some() && payload.value.is_some() {
+            return Err(AppError::InvalidInput(
+                "Only one of `vault_connection_id` or `value` can be present".to_string(),
+            ));
+        }
+
+        if payload.vault_connection.is_none() && payload.value.is_none() {
+            return Err(AppError::InvalidInput(
+                "One of `vault_connection_id` or `value` must be present".to_string(),
+            ));
+        }
         let response = SecretService::create_secret_with_version(&state, payload).await?;
         Ok((StatusCode::CREATED, Json(response)))
     }

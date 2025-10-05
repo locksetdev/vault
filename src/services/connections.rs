@@ -149,7 +149,7 @@ impl ConnectionService {
             .await?
             .ok_or(AppError::NotFoundError)?;
 
-        let mut config = Self::decrypt_connection_config(
+        let config = Self::decrypt_connection_config(
             db,
             kms_client,
             connection.dek_id,
@@ -158,20 +158,20 @@ impl ConnectionService {
         .await?;
 
         let response = VaultConnectionResponse {
+            id: connection.id,
             public_id: connection.public_id,
             integration_type: connection.integration_type,
-            config: config.to_string(),
+            config,
             sha256sum: connection.sha256sum,
             ttl: connection.ttl,
             created_at: connection.created_at,
             updated_at: connection.updated_at,
         };
-        config.zeroize();
 
         Ok(response)
     }
 
-    /// Get a vault connection by its public ID
+    /// Get a vault connection by its ID
     pub async fn get_vault_connection_config_by_id(
         db: &PgPool,
         kms_client: &Arc<KmsClient>,
@@ -190,6 +190,7 @@ impl ConnectionService {
         .await?;
 
         let config = VaultConnectionConfig {
+            id: connection.id,
             integration_type: connection.integration_type,
             config,
             ttl: connection.ttl,
