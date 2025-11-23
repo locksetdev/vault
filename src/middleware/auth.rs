@@ -8,7 +8,6 @@ use axum::{
 };
 use bytes::Bytes;
 use ecdsa::{Signature, signature::Verifier};
-use sha2::{Digest, Sha256};
 use std::sync::Arc;
 
 const MAX_BODY_SIZE: usize = 256 * 1024; // 256kb
@@ -62,19 +61,17 @@ pub async fn verify_signature(
             .map_err(|_| AppError::InvalidInput("Request body too large".to_string()))?
     };
 
-    let new_line = "\n";
-
-    let mut hasher = Sha256::new();
-    hasher.update(timestamp_str.as_bytes());
-    hasher.update(new_line.as_bytes());
-    hasher.update(parts.uri.path().as_bytes());
-    hasher.update(new_line.as_bytes());
-    hasher.update(&body_bytes);
-    let digest = hasher.finalize();
+    let mut plaintext =
+        Vec::with_capacity(timestamp_str.len() + parts.uri.path().len() + body_bytes.len() + 2);
+    plaintext.extend_from_slice(timestamp_str.as_bytes());
+    plaintext.push(b'\n');
+    plaintext.extend_from_slice(parts.uri.path().as_bytes());
+    plaintext.push(b'\n');
+    plaintext.extend_from_slice(body_bytes.as_ref());
 
     state
         .auth_verifying_key
-        .verify(&digest, &signature)
+        .verify(&plaintext, &signature)
         .map_err(|_| AppError::Unauthorized)?;
 
     let req = Request::from_parts(parts, Body::from(body_bytes));
