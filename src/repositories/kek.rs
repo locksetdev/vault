@@ -8,12 +8,17 @@ impl KekRepository {
     pub async fn get_random_kek(
         tx: &mut Transaction<'_, Postgres>,
     ) -> Result<KeyEncryptionKey, AppError> {
-        let kek: KeyEncryptionKey =
+        let kek: Option<KeyEncryptionKey> =
             sqlx::query_as("SELECT * FROM key_encryption_keys ORDER BY RANDOM()")
-                .fetch_one(&mut **tx)
+                .fetch_optional(&mut **tx)
                 .await?;
 
-        Ok(kek)
+        match kek {
+            None => Err(AppError::KmsError(
+                "No Key Encryption Keys available".to_string(),
+            )),
+            Some(kek) => Ok(kek)
+        }
     }
 
     pub async fn get_kek_by_id(pool: &PgPool, id: i32) -> Result<KeyEncryptionKey, AppError> {
