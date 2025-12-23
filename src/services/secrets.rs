@@ -38,6 +38,9 @@ impl SecretService {
             (request.value.unwrap_or_default(), None)
         };
 
+        let encrypted_payload =
+            crypto::encrypt(&mut tx, &state.kms_client, secret_value.as_bytes()).await?;
+
         let secret = SecretRepository::create_secret(
             &mut tx,
             &request.name,
@@ -45,9 +48,6 @@ impl SecretService {
             &request.version_tag,
         )
         .await?;
-
-        let encrypted_payload =
-            crypto::encrypt(&mut tx, &state.kms_client, secret_value.as_bytes()).await?;
 
         let new_version = SecretRepository::create_secret_version(
             &mut tx,
