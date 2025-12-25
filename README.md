@@ -19,11 +19,11 @@ and managing secrets and their versions, with a focus on security and performanc
 
 The application is configured using environment variables. The following variables are required:
 
-| Variable          | Description                                       |
-| ----------------- | ------------------------------------------------- |
+| Variable          | Description                                        |
+|-------------------|----------------------------------------------------|
 | `DB_URI`          | The connection string for the PostgreSQL database. |
-| `AUTH_PUBLIC_KEY` | The public key used for authenticating requests.  |
-| `PORT`            | The port on which the application will listen.    |
+| `AUTH_PUBLIC_KEY` | The public key used for authenticating requests.   |
+| `PORT`            | The port on which the application will listen.     |
 
 ## API Endpoints
 
@@ -42,6 +42,8 @@ The application is configured using environment variables. The following variabl
 - `DELETE /v1/vault-connections/{public_id}`: Delete a vault connection.
 
 ## Getting Started
+
+#### TBA: Instructions for setting up with Docker
 
 ### Prerequisites
 
