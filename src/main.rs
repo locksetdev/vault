@@ -79,6 +79,7 @@ fn build_router(app_state: Arc<AppState>) -> Router {
             middleware::auth::verify_signature,
         ))
         .layer(axum_middleware::from_fn(middleware::logging::log_requests))
+        .layer(axum_middleware::from_fn(middleware::healthcheck::healthcheck))
         .with_state(app_state)
 }
 
